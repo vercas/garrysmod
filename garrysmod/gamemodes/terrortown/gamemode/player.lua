@@ -69,7 +69,9 @@ function GM:PlayerSpawn(ply)
    ply.has_spawned = true
 
    -- let the client do things on spawn
-   SendUserMessage("plyspawned", ply, ply:IsSpec())
+   net.Start("TTT_PlayerSpawned")
+      net.WriteBit(ply:IsSpec())
+   net.Send(ply)
 
    if ply:IsSpec() then
       ply:StripAll()
@@ -82,22 +84,21 @@ function GM:PlayerSpawn(ply)
    -- ye olde hooks
    hook.Call("PlayerLoadout", GAMEMODE, ply)
    hook.Call("PlayerSetModel", GAMEMODE, ply)
+   hook.Call("TTTPlayerSetColor", GAMEMODE, ply)
 
-   local oldhands = ply:GetHands()
-   if IsValid(oldhands) then oldhands:Remove() end
-
-   local hands = ents.Create( "gmod_hands" )
-   if IsValid(hands) then
-      ply:SetHands(hands)
-      hands:SetOwner(ply)
-
-      -- Find model and attach to vm, currently ours
-      ply:SetPlayerHands(ply)
-      ply:DeleteOnRemove(hands)
-      hands:Spawn()
-   end
+   ply:SetupHands()
 
    SCORE:HandleSpawn(ply)
+end
+
+function GM:PlayerSetHandsModel( pl, ent )
+   local simplemodel = player_manager.TranslateToPlayerModelName(pl:GetModel())
+   local info = player_manager.TranslatePlayerHands(simplemodel)
+   if info then
+      ent:SetModel(info.model)
+      ent:SetSkin(info.skin)
+      ent:SetBodyGroups(info.body)
+   end
 end
 
 function GM:IsSpawnpointSuitable(ply, spwn, force, rigged)
@@ -251,8 +252,23 @@ function GM:PlayerSetModel(ply)
    util.PrecacheModel(mdl)
    ply:SetModel(mdl)
 
-   ply:SetColor(GAMEMODE.playercolor or COLOR_WHITE)
+   -- Always clear color state, may later be changed in TTTPlayerSetColor
+   ply:SetColor(COLOR_WHITE)
 end
+
+
+function GM:TTTPlayerSetColor(ply)
+   local clr = COLOR_WHITE
+   local should_color = hook.Call("TTTShouldColorModel", GAMEMODE, ply:GetModel())
+   if GAMEMODE.playercolor and should_color then
+      -- If this player has a colorable model, always use the same color as all
+      -- other colorable players, so color will never be the factor that lets
+      -- you tell players apart.
+      clr = GAMEMODE.playercolor
+   end
+   ply:SetColor(clr)
+end
+
 
 -- Only active players can use kill cmd
 function GM:CanPlayerSuicide(ply)
@@ -513,6 +529,8 @@ local function CheckCreditAward(victim, attacker)
    if (not victim:IsTraitor()) and (not GAMEMODE.AwardedCredits or GetConVar("ttt_credits_award_repeat"):GetBool()) then
       local inno_alive = 0
       local inno_dead = 0
+      local inno_total = 0
+      
       for _, ply in pairs(player.GetAll()) do
          if not ply:GetTraitor() then
             if ply:IsTerror() then
@@ -663,7 +681,7 @@ function GM:PlayerDeath( victim, infl, attacker)
 
    victim:Extinguish()
 
-   SendUserMessage("plydied", victim)
+   net.Start("TTT_PlayerDied") net.Send(ply)
 
    if HasteMode() and GetRoundState() == ROUND_ACTIVE then
       IncRoundEnd(GetConVar("ttt_haste_minutes_per_death"):GetFloat() * 60)

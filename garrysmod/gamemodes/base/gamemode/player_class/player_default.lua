@@ -41,7 +41,6 @@ end
 --
 function PLAYER:Init()
 
-
 end
 
 --
@@ -51,17 +50,6 @@ end
 -- Ret1:
 --
 function PLAYER:Spawn()
-
-	local oldhands = self.Player:GetHands();
-	if ( IsValid( oldhands ) ) then
-		oldhands:Remove()
-	end
-
-	local hands = ents.Create( "gmod_hands" )
-	if ( IsValid( hands ) ) then
-		hands:DoSetup( self.Player )
-		hands:Spawn()
-	end	
 
 end
 
@@ -75,6 +63,15 @@ function PLAYER:Loadout()
 
 	self.Player:Give( "weapon_pistol" )
 	self.Player:GiveAmmo( 255, "Pistol", true )
+
+end
+
+function PLAYER:SetModel()
+
+	local cl_playermodel = self.Player:GetInfo( "cl_playermodel" )
+	local modelname = player_manager.TranslatePlayerModel( cl_playermodel )
+	util.PrecacheModel( modelname )
+	self.Player:SetModel( modelname )
 
 end
 
@@ -122,15 +119,6 @@ end
 --
 function PLAYER:PostDrawViewModel( vm, weapon )
 
-	if ( weapon.UseHands || !weapon:IsScripted() ) then
-
-		local hands = self.Player:GetHands()
-		if ( IsValid( hands ) ) then
-			hands:DrawModel()
-		end
-
-	end
-
 end
 
 --
@@ -143,8 +131,8 @@ function PLAYER:GetHandsModel()
 
 	-- return { model = "models/weapons/c_arms_cstrike.mdl", skin = 1, body = "0100000" }
 
-	local cl_playermodel = self.Player:GetInfo( "cl_playermodel" )
-	return player_manager.TranslatePlayerHands( cl_playermodel )
+	local playermodel = player_manager.TranslateToPlayerModelName( self.Player:GetModel() )
+	return player_manager.TranslatePlayerHands( playermodel )
 
 end
 

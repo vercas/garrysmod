@@ -64,7 +64,8 @@ function PANEL:Init()
 	self:SetEnterAllowed( true )
 	self:SetUpdateOnType( false )
 	self:SetNumeric( false )
-	
+	self:SetAllowNonAsciiCharacters( true )
+		
 	
 	-- Nicer default height
 	self:SetTall( 20 )
@@ -326,7 +327,7 @@ function PANEL:CheckNumeric( strValue )
 	if ( !self:GetNumeric() ) then return false end
 	
 	-- God I hope numbers look the same in every language
-	if ( !string.find ( strAllowedNumericCharacters, strValue ) ) then
+	if ( !string.find ( strAllowedNumericCharacters, strValue, 1, true ) ) then
 	
 		-- Noisy Error?
 		return true

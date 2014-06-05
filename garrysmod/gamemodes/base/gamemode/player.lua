@@ -1,4 +1,3 @@
-
 --[[---------------------------------------------------------
    Name: gamemode:OnPhysgunFreeze( weapon, phys, ent, player )
    Desc: The physgun wants to freeze a prop
@@ -42,6 +41,13 @@ function GM:OnPhysgunReload( weapon, ply )
 
 	ply:PhysgunUnfreeze( weapon )
 
+end
+
+--[[---------------------------------------------------------
+--   Name: gamemode:PlayerAuthed( )
+--   Desc: Player's STEAMID has been authed
+-----------------------------------------------------------]]
+function GM:PlayerAuthed( ply, SteamID, UniqueID )
 end
 
 --[[---------------------------------------------------------
@@ -127,67 +133,74 @@ function GM:PlayerSilentDeath( Victim )
 
 end
 
+-- Pool network strings used for PlayerDeaths.
+util.AddNetworkString("PlayerKilledSelf")
+util.AddNetworkString("PlayerKilledByPlayer")
+util.AddNetworkString("PlayerKilled")
+
 --[[---------------------------------------------------------
    Name: gamemode:PlayerDeath( )
    Desc: Called when a player dies.
 -----------------------------------------------------------]]
-function GM:PlayerDeath( Victim, Inflictor, Attacker )
+function GM:PlayerDeath( ply, inflictor, attacker )
 
 	-- Don't spawn for at least 2 seconds
-	Victim.NextSpawnTime = CurTime() + 2
-	Victim.DeathTime = CurTime()
+	ply.NextSpawnTime = CurTime() + 2
+	ply.DeathTime = CurTime()
 	
-	if ( IsValid( Attacker ) && Attacker:IsVehicle() && IsValid( Attacker:GetDriver() ) ) then
-		Attacker = Attacker:GetDriver()
+	if ( IsValid( attacker ) && attacker:GetClass() == "trigger_hurt" ) then attacker = ply end
+	
+	if ( IsValid( attacker ) && attacker:IsVehicle() && IsValid( attacker:GetDriver() ) ) then
+		attacker = attacker:GetDriver()
 	end
 
-	if ( !IsValid( Inflictor ) && IsValid( Attacker ) ) then
-		Inflictor = Attacker
+	if ( !IsValid( inflictor ) && IsValid( attacker ) ) then
+		inflictor = attacker
 	end
 
 	-- Convert the inflictor to the weapon that they're holding if we can.
 	-- This can be right or wrong with NPCs since combine can be holding a 
 	-- pistol but kill you by hitting you with their arm.
-	if ( Inflictor && Inflictor == Attacker && (Inflictor:IsPlayer() || Inflictor:IsNPC()) ) then
+	if ( IsValid( inflictor ) && inflictor == attacker && ( inflictor:IsPlayer() || inflictor:IsNPC() ) ) then
 	
-		Inflictor = Inflictor:GetActiveWeapon()
-		if ( !IsValid( Inflictor ) ) then Inflictor = Attacker end
+		inflictor = inflictor:GetActiveWeapon()
+		if ( !IsValid( inflictor ) ) then inflictor = attacker end
 
 	end
 
-	if (Attacker == Victim) then
+	if ( attacker == ply ) then
 	
-		umsg.Start( "PlayerKilledSelf" )
-			umsg.Entity( Victim )
-		umsg.End()
+		net.Start( "PlayerKilledSelf" )
+			net.WriteEntity( ply )
+		net.Broadcast()
 		
-		MsgAll( Attacker:Nick() .. " suicided!\n" )
+		MsgAll( attacker:Nick() .. " suicided!\n" )
 		
 	return end
 
-	if ( Attacker:IsPlayer() ) then
+	if ( attacker:IsPlayer() ) then
 	
-		umsg.Start( "PlayerKilledByPlayer" )
+		net.Start( "PlayerKilledByPlayer" )
 		
-			umsg.Entity( Victim )
-			umsg.String( Inflictor:GetClass() )
-			umsg.Entity( Attacker )
+			net.WriteEntity( ply )
+			net.WriteString( inflictor:GetClass() )
+			net.WriteEntity( attacker )
 		
-		umsg.End()
+		net.Broadcast()
 		
-		MsgAll( Attacker:Nick() .. " killed " .. Victim:Nick() .. " using " .. Inflictor:GetClass() .. "\n" )
+		MsgAll( attacker:Nick() .. " killed " .. ply:Nick() .. " using " .. inflictor:GetClass() .. "\n" )
 		
 	return end
 	
-	umsg.Start( "PlayerKilled" )
+	net.Start( "PlayerKilled" )
 	
-		umsg.Entity( Victim )
-		umsg.String( Inflictor:GetClass() )
-		umsg.String( Attacker:GetClass() )
+		net.WriteEntity( ply )
+		net.WriteString( inflictor:GetClass() )
+		net.WriteString( attacker:GetClass() )
 
-	umsg.End()
+	net.Broadcast()
 	
-	MsgAll( Victim:Nick() .. " was killed by " .. Attacker:GetClass() .. "\n" )
+	MsgAll( ply:Nick() .. " was killed by " .. attacker:GetClass() .. "\n" )
 	
 end
 
@@ -245,6 +258,8 @@ function GM:PlayerSpawn( pl )
 	-- Stop observer mode
 	pl:UnSpectate()
 
+	pl:SetupHands()
+
 	player_manager.OnPlayerSpawn( pl )
 	player_manager.RunClass( pl, "Spawn" )
 
@@ -262,11 +277,28 @@ end
 -----------------------------------------------------------]]
 function GM:PlayerSetModel( pl )
 
-	local cl_playermodel = pl:GetInfo( "cl_playermodel" )
-	local modelname = player_manager.TranslatePlayerModel( cl_playermodel )
-	util.PrecacheModel( modelname )
-	pl:SetModel( modelname )
-	
+	player_manager.RunClass( pl, "SetModel" )
+
+end
+
+--[[---------------------------------------------------------
+   Name: gamemode:PlayerSetHandsModel( )
+   Desc: Sets the player's view model hands model
+-----------------------------------------------------------]]
+function GM:PlayerSetHandsModel( pl, ent )
+
+	local info = player_manager.RunClass( pl, "GetHandsModel" )
+	if ( !info ) then
+		local playermodel = player_manager.TranslateToPlayerModelName( pl:GetModel() )
+		info = player_manager.TranslatePlayerHands( playermodel )
+	end
+
+	if ( info ) then
+		ent:SetModel( info.model )
+		ent:SetSkin( info.skin )
+		ent:SetBodyGroups( info.body )
+	end
+
 end
 
 --[[---------------------------------------------------------
@@ -293,7 +325,7 @@ function GM:PlayerSelectTeamSpawn( TeamID, pl )
 	for i=0, 6 do
 	
 		local ChosenSpawnPoint = table.Random( SpawnPoints )
-		if ( GAMEMODE:IsSpawnpointSuitable( pl, ChosenSpawnPoint, i==6 ) ) then
+		if ( hook.Call( "IsSpawnpointSuitable", GAMEMODE, pl, ChosenSpawnPoint, i == 6 ) ) then
 			return ChosenSpawnPoint
 		end
 	
@@ -317,7 +349,7 @@ function GM:IsSpawnpointSuitable( pl, spawnpointent, bMakeSuitable )
 	-- (HL2DM kills everything within a 128 unit radius)
 	local Ents = ents.FindInBox( Pos + Vector( -16, -16, 0 ), Pos + Vector( 16, 16, 64 ) )
 	
-	if ( pl:Team() == TEAM_SPECTATOR || pl:Team() == TEAM_UNASSIGNED ) then return true end
+	if ( pl:Team() == TEAM_SPECTATOR ) then return true end
 	
 	local Blockers = 0
 	
@@ -408,15 +440,6 @@ function GM:PlayerSelectSpawn( pl )
 		-- ZM Maps
 		self.SpawnPoints = table.Add( self.SpawnPoints, ents.FindByClass( "info_player_deathmatch" ) )
 		self.SpawnPoints = table.Add( self.SpawnPoints, ents.FindByClass( "info_player_zombiemaster" ) )  		
-		
-		-- If any of the spawnpoints have a MASTER flag then only use that one.
-		for k, v in pairs( self.SpawnPoints ) do
-		
-			if ( v:HasSpawnFlags( 1 ) ) then
-				return v;
-			end
-		
-		end
 
 	end
 	
@@ -424,13 +447,23 @@ function GM:PlayerSelectSpawn( pl )
 	
 	if ( Count == 0 ) then
 		Msg("[PlayerSelectSpawn] Error! No spawn points!\n")
-		return nil 
+		return nil
+	end
+	
+	-- If any of the spawnpoints have a MASTER flag then only use that one.
+	-- This is needed for single player maps.
+	for k, v in pairs( self.SpawnPoints ) do
+		
+		if ( v:HasSpawnFlags( 1 ) ) then
+			return v
+		end
+		
 	end
 	
 	local ChosenSpawnPoint = nil
 	
-	-- Try to work out the best, random spawnpoint (in 6 goes)
-	for i=0, 6 do
+	-- Try to work out the best, random spawnpoint
+	for i=0, Count do
 	
 		ChosenSpawnPoint = table.Random( self.SpawnPoints )
 
@@ -440,7 +473,7 @@ function GM:PlayerSelectSpawn( pl )
 			ChosenSpawnPoint != pl:GetVar( "LastSpawnpoint" ) &&
 			ChosenSpawnPoint != self.LastSpawnPoint ) then
 			
-			if ( GAMEMODE:IsSpawnpointSuitable( pl, ChosenSpawnPoint, i==6 ) ) then
+			if ( hook.Call( "IsSpawnpointSuitable", GAMEMODE, pl, ChosenSpawnPoint, i == Count ) ) then
 			
 				self.LastSpawnPoint = ChosenSpawnPoint
 				pl:SetVar( "LastSpawnpoint", ChosenSpawnPoint )
@@ -676,7 +709,7 @@ end
 function GM:GetFallDamage( ply, flFallSpeed )
 
 	if( GetConVarNumber( "mp_falldamage" ) > 0 ) then -- realistic fall damage is on
-		return ( flFallSpeed - 580 ) * 0.227; -- near the Source SDK value
+		return ( flFallSpeed - 526.5 ) * (100 / 396); -- the Source SDK value
 	end
 	
 	return 10

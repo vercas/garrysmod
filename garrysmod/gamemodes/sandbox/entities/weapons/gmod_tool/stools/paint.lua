@@ -1,16 +1,6 @@
 
-TOOL.Category		= "Render"
-TOOL.Name			= "#tool.paint.name"
-TOOL.Command		= nil
-TOOL.ConfigName		= ""
-
-game.AddDecal( "Eye",					"decals/eye" );
-game.AddDecal( "Smile",					"decals/smile" );
-game.AddDecal( "Light",					"decals/light" );
-game.AddDecal( "Dark",					"decals/dark" );
-game.AddDecal( "Noughtsncrosses",		"decals/noughtsncrosses" );
-game.AddDecal( "Nought",				"decals/nought" );
-game.AddDecal( "Cross",					"decals/cross" );
+TOOL.Category = "Render"
+TOOL.Name = "#tool.paint.name"
 
 TOOL.LeftClickAutomatic = true
 TOOL.RightClickAutomatic = true
@@ -24,14 +14,14 @@ local function PlaceDecal( Player, Entity, Data )
 	if ( !Entity:IsWorld() && !IsValid( Entity ) ) then return end
 
 	local Bone = Entity:GetPhysicsObjectNum( Data.bone or 0 )
-	if ( !IsValid( Bone ) ) then 
+	if ( !IsValid( Bone ) ) then
 		Bone = Entity
 	end
 
-	util.Decal( Data.decal, Bone:LocalToWorld(Data.Pos1), Bone:LocalToWorld(Data.Pos2) )
-		
+	util.Decal( Data.decal, Bone:LocalToWorld( Data.Pos1 ), Bone:LocalToWorld( Data.Pos2 ) )
+	
 	if ( SERVER ) then
-		local i = Entity.DecalCount or 0;
+		local i = Entity.DecalCount or 0
 		i = i + 1
 		duplicator.StoreEntityModifier( Entity, "decal" .. i, Data )
 		Entity.DecalCount = i
@@ -45,16 +35,16 @@ end
 for i=1,32 do
 
 	function PlaceDecal_delayed( Player, Entity, Data )
-		timer.Simple( i*0.05, function() PlaceDecal( Player, Entity, Data ) end )
+		timer.Simple( i * 0.05, function() PlaceDecal( Player, Entity, Data ) end )
 	end
 
-	duplicator.RegisterEntityModifier( "decal"..i, PlaceDecal_delayed )
+	duplicator.RegisterEntityModifier( "decal" .. i, PlaceDecal_delayed )
 
 end
 
 function TOOL:LeftClick( trace )
 
-	return self:RightClick( trace, true );
+	return self:RightClick( trace, true )
 	
 end
 
@@ -88,6 +78,14 @@ function TOOL:RightClick( trace, bNoDelay )
 	
 end
 
+game.AddDecal( "Eye", "decals/eye" )
+game.AddDecal( "Dark", "decals/dark" )
+game.AddDecal( "Smile", "decals/smile" )
+game.AddDecal( "Light", "decals/light" )
+game.AddDecal( "Cross", "decals/cross" )
+game.AddDecal( "Nought", "decals/nought" )
+game.AddDecal( "Noughtsncrosses", "decals/noughtsncrosses" )
+
 list.Add( "PaintMaterials", "Eye" )
 list.Add( "PaintMaterials", "Smile" )
 list.Add( "PaintMaterials", "Light" )
@@ -120,23 +118,17 @@ list.Add( "PaintMaterials", "Cross" )
 
 function TOOL.BuildCPanel( CPanel )
 
-	-- HEADER
-	CPanel:AddControl( "Header", { Text = "#tool.paint.name", Description	= "#tool.paint_desc" }  )
-	
 	local Options = list.Get( "PaintMaterials" )
 	table.sort( Options )
 	
 	local RealOptions = {}
 
 	for k, decal in pairs( Options ) do
-	
-		--local MatName = util.DecalMaterial( decal )	
+
 		RealOptions[ decal ] = { paint_decal = decal }
 	
 	end
-		
+	
 	CPanel:AddControl( "ListBox", { Label = "#tool.paint.texture", Height = "300", Options = RealOptions } )
-	
-	
-									
+
 end

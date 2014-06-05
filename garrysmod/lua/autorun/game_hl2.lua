@@ -1,17 +1,16 @@
 
-
 local Category = ""
 
 local function ADD_ITEM( name, class )
 
-	list.Set( "SpawnableEntities", class, { PrintName = name, ClassName = class, Category = Category, NormalOffset = 32, DropToFloor = true, Author = "VALVe", AdminOnly = false } )
+	list.Set( "SpawnableEntities", class, { PrintName = name, ClassName = class, Category = Category, NormalOffset = 32, DropToFloor = true, Author = "VALVe" } )
 	duplicator.Allow( class )
 
 end
 
 local function ADD_WEAPON( name, class )
 
-	list.Set( "Weapon", class, { ClassName = class, PrintName = name, Category = Category, AdminOnly = false, Spawnable = true } )
+	list.Set( "Weapon", class, { ClassName = class, PrintName = name, Category = Category, Author = "VALVe", Spawnable = true } )
 	duplicator.Allow( class )
 
 end
@@ -29,42 +28,55 @@ ADD_ITEM( "Crossbow Bolts",		"item_ammo_crossbow" )
 ADD_ITEM( "SMG Grenade",		"item_ammo_smg1_grenade" )
 ADD_ITEM( "RPG",				"item_rpg_round" )
 
-
 -- Items
 ADD_ITEM( "Suit Battery",		"item_battery" )
 ADD_ITEM( "Health Vial",		"item_healthvial" )
-ADD_ITEM( "Health kit",			"item_healthkit" )
+ADD_ITEM( "Health Kit",			"item_healthkit" )
 ADD_ITEM( "Suit Charger",		"item_suitcharger" )
 ADD_ITEM( "Health Charger",		"item_healthcharger" )
 ADD_ITEM( "Suit",				"item_suit" )
 
--- Weapons
-ADD_ITEM( "Helicopter Grenade",	"grenade_helicopter" )
---ADD_WEAPON( "Zombine Grenade",	"npc_grenade_frag" )
+ADD_ITEM( "Thumper",			"prop_thumper" )
 ADD_ITEM( "Combine Mine",		"combine_mine" )
+ADD_ITEM( "Helicopter Grenade",	"grenade_helicopter" )
+ADD_ITEM( "Zombine Grenade",	"npc_grenade_frag" )
+
+if ( IsMounted( "ep2" ) ) then
+    game.AddParticles( "particles/striderbuster.pcf" )
+    ADD_ITEM( "Magnusson",   	"weapon_striderbuster" )
+    --Find out how to add the other helicopter grenade skin
+end
+
+-- Weapons
 ADD_WEAPON( "357",				"weapon_357" )
-ADD_WEAPON( "Annabelle",			"weapon_annabelle" )
+--ADD_WEAPON( "Alyx Gun",			"weapon_alyxgun" )
+--ADD_WEAPON( "Annabelle",		"weapon_annabelle" )
 ADD_WEAPON( "AR2",				"weapon_ar2" )
 ADD_WEAPON( "Bug Bait",			"weapon_bugbait" )
 ADD_WEAPON( "Crossbow",			"weapon_crossbow" )
 ADD_WEAPON( "Crowbar",			"weapon_crowbar" )
---ADD_WEAPON( "Physcannon",			"weapon_physcannon" )
+ADD_WEAPON( "Gravity Gun",		"weapon_physcannon" )
 ADD_WEAPON( "Frag Grenade",		"weapon_frag" )
---ADD_WEAPON( "Physgun",			"weapon_physgun" )
-ADD_WEAPON( "Pistol",				"weapon_pistol" )
+ADD_WEAPON( "Pistol",			"weapon_pistol" )
 ADD_WEAPON( "RPG Launcher",		"weapon_rpg" )
 ADD_WEAPON( "Shotgun",			"weapon_shotgun" )
 ADD_WEAPON( "SLAM",				"weapon_slam" )
 ADD_WEAPON( "SMG",				"weapon_smg1" )
-ADD_WEAPON( "Stunstick",			"weapon_stunstick" )
+ADD_WEAPON( "Stunstick",		"weapon_stunstick" )
 
-list.Set("SpawnableEntities", "prop_thumper", 
-{
-	PrintName = "Thumper",
-	ClassName = "prop_thumper",
-	Category = Category,
-	DropToFloor = true,
-	Author = "VALVe",
-	AdminOnly = false
-})
+Category = "Other"
+ADD_WEAPON( "Physics Gun",		"weapon_physgun" )
 
+-- NPC Weapons
+list.Add( "NPCUsableWeapons", { class = "none",				title = "None" } )
+list.Add( "NPCUsableWeapons", { class = "weapon_stunstick",	title = "Stunstick" } )
+list.Add( "NPCUsableWeapons", { class = "weapon_crowbar",	title = "Crowbar" } )
+list.Add( "NPCUsableWeapons", { class = "weapon_pistol",	title = "Pistol" } )
+list.Add( "NPCUsableWeapons", { class = "weapon_alyxgun",	title = "Alyx Gun" } )
+list.Add( "NPCUsableWeapons", { class = "weapon_357",		title = "357" } )
+list.Add( "NPCUsableWeapons", { class = "weapon_smg1",		title = "SMG" } )
+list.Add( "NPCUsableWeapons", { class = "weapon_ar2",		title = "AR2" } )
+list.Add( "NPCUsableWeapons", { class = "weapon_shotgun",	title = "Shotgun" } )
+list.Add( "NPCUsableWeapons", { class = "weapon_annabelle",	title = "Annabelle" } )
+list.Add( "NPCUsableWeapons", { class = "weapon_crossbow",	title = "Crossbow" } )
+list.Add( "NPCUsableWeapons", { class = "weapon_rpg",		title = "RPG" } )

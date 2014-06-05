@@ -187,3 +187,83 @@ end
 --
 function meta:AllowFlashlight( bAble ) self.m_bFlashlight = bAble end
 function meta:CanUseFlashlight() return self.m_bFlashlight end
+
+-- A function to set up player hands, so coders don't have to copy all the code everytime.
+-- Call this in PlayerSpawn hook
+function meta:SetupHands( ply )
+
+	local oldhands = self:GetHands()
+	if ( IsValid( oldhands ) ) then
+		oldhands:Remove()
+	end
+
+	local hands = ents.Create( "gmod_hands" )
+	if ( IsValid( hands ) ) then
+		hands:DoSetup( self, ply )
+		hands:Spawn()
+	end
+
+end
+
+--
+-- Those functions have been removed from the engine since AddFlag and RemoveFlag
+-- made them obsolete, but we'll keep a Lua version of them for backward compatibility
+--
+
+if SERVER then
+
+--[[---------------------------------------------------------
+	Freeze
+	- Freezes or unfreezes the player
+-----------------------------------------------------------]]  
+function meta:Freeze( b )
+	
+	if ( b ) then
+		self:AddFlags( FL_FROZEN )
+	else
+		self:RemoveFlags( FL_FROZEN )
+	end
+	
+end
+
+--[[---------------------------------------------------------
+	GodEnable
+	- Enables godmode on the player
+-----------------------------------------------------------]]  
+function meta:GodEnable()
+	
+	self:AddFlags( FL_GODMODE )
+	
+end
+
+--[[---------------------------------------------------------
+	GodDisable
+	- Disables godmode on the player
+-----------------------------------------------------------]]  
+function meta:GodDisable()
+	
+	self:RemoveFlags( FL_GODMODE )
+	
+end
+
+end
+
+--[[---------------------------------------------------------
+	IsFrozen
+	- Returns true if the player is frozen
+-----------------------------------------------------------]]  
+function meta:IsFrozen()
+
+	return self:IsFlagSet( FL_FROZEN )
+
+end
+
+--[[---------------------------------------------------------
+	HasGodMode
+	- Returns true if the player is in godmode
+-----------------------------------------------------------]]  
+function meta:HasGodMode()
+	
+	return self:IsFlagSet( FL_GODMODE )
+	
+end

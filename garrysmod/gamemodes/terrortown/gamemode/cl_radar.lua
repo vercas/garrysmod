@@ -105,9 +105,9 @@ local function DrawTarget(tgt, size, offset, no_shrink)
 end
 
 local indicator   = surface.GetTextureID("effects/select_ring")
-local c4warn      = surface.GetTextureID("VGUI/ttt/icon_c4warn")
-local sample_scan = surface.GetTextureID("VGUI/ttt/sample_scan")
-local det_beacon  = surface.GetTextureID("VGUI/ttt/det_beacon")
+local c4warn      = surface.GetTextureID("vgui/ttt/icon_c4warn")
+local sample_scan = surface.GetTextureID("vgui/ttt/sample_scan")
+local det_beacon  = surface.GetTextureID("vgui/ttt/det_beacon")
 
 local GetPTranslation = LANG.GetParamTranslation
 local FormatTime = util.SimpleTime
@@ -204,13 +204,13 @@ function RADAR:Draw(client)
    surface.DrawText(text)
 end
 
-local function ReceiveC4Warn(um)
-   local idx = um:ReadShort()
-   local armed = um:ReadBool()
+local function ReceiveC4Warn()
+   local idx = net.ReadUInt(16)
+   local armed = net.ReadBit() == 1
 
    if armed then
-      local pos = um:ReadVector()
-      local etime = um:ReadFloat()
+      local pos = net.ReadVector()
+      local etime = net.ReadFloat()
 
       RADAR.bombs[idx] = {pos=pos, t=etime}
    else
@@ -219,25 +219,25 @@ local function ReceiveC4Warn(um)
 
    RADAR.bombs_count = table.Count(RADAR.bombs)
 end
-usermessage.Hook("c4_warn", ReceiveC4Warn)
+net.Receive("TTT_C4Warn", ReceiveC4Warn)
 
-local function ReceiveCorpseCall(um)
-   local pos = um:ReadVector()
+local function ReceiveCorpseCall()
+   local pos = net.ReadVector()
    table.insert(RADAR.called_corpses, {pos = pos, called = CurTime()})
 end
-usermessage.Hook("corpse_call", ReceiveCorpseCall)
+net.Receive("TTT_CorpseCall", ReceiveCorpseCall)
 
-local function ReceiveRadarScan(um)
-   local num_targets = um:ReadChar()
+local function ReceiveRadarScan()
+   local num_targets = net.ReadUInt(8)
 
    RADAR.targets = {}
    for i=1, num_targets do
-      local r = um:ReadChar()
+      local r = net.ReadUInt(2)
 
       local pos = Vector()
-      pos.x = um:ReadShort()
-      pos.y = um:ReadShort()
-      pos.z = um:ReadShort()
+      pos.x = net.ReadInt(32)
+      pos.y = net.ReadInt(32)
+      pos.z = net.ReadInt(32)
 
       table.insert(RADAR.targets, {role=r, pos=pos})
    end
@@ -248,7 +248,7 @@ local function ReceiveRadarScan(um)
    timer.Create("radartimeout", RADAR.duration + 1, 1,
                 function() RADAR:Timeout() end)
 end
-usermessage.Hook("radar", ReceiveRadarScan)
+net.Receive("TTT_Radar", ReceiveRadarScan)
 
 local GetTranslation = LANG.GetTranslation
 function RADAR.CreateMenu(parent, frame)

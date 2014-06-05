@@ -161,7 +161,7 @@ end
 
 local function SetPhysicsCollisions( Ent, b )
 
-	if (!Ent || !Ent:IsValid() || !Ent:GetPhysicsObject()) then return end
+	if ( !IsValid( Ent ) || !IsValid( Ent:GetPhysicsObject() ) ) then return end
 	
 	Ent:GetPhysicsObject():EnableCollisions( b )
 
@@ -176,7 +176,7 @@ function RemoveConstraints( Ent, Type )
 	if ( !Ent:GetTable().Constraints ) then return end
 	
 	local c = Ent:GetTable().Constraints
-	i = 0
+	local i = 0
 
 	for k, v in pairs( c ) do
 	
@@ -569,6 +569,7 @@ function Elastic( Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, constant, damping, rda
 	local WPos2 = Phys2:LocalToWorld( LPos2 )
 
 	local Constraint 	= nil
+	local rope 	= nil
 
 	-- Make Constraint
 	if ( Phys1 != Phys2 ) then
@@ -615,17 +616,14 @@ function Elastic( Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, constant, damping, rda
 
 		Constraint:SetTable( ctable )
 	
+		-- Make Rope
+		local kv =  { 
+			Collide 	= 1,
+			Type 		= 0
+		}
+		
+		rope = CreateKeyframeRope( WPos1, width, material, Constraint, Ent1, LPos1, Bone1, Ent2, LPos2, Bone2, kv )
 	end
-
-	-- Make Rope
-	local kv = 
-	{ 
-		Collide 	= 1,
-		Type 		= 0
-	}
-	
-	local rope = CreateKeyframeRope( WPos1, width, material, Constraint, Ent1, LPos1, Bone1, Ent2, LPos2, Bone2, kv )
-	
 
 	return Constraint, rope
 end
@@ -685,8 +683,9 @@ duplicator.RegisterConstraint( "Keepupright", Keepupright, "Ent1", "Ang", "Bone"
 function CreateStaticAnchorPoint( Pos )
 
 	-- Creates an invisible frozen, not interactive prop.
-	Anchor = ents.Create( "gmod_anchor" )
-		Anchor:SetPos( Pos )
+	local Anchor = ents.Create( "gmod_anchor" )
+	
+	Anchor:SetPos( Pos )
 	Anchor:Spawn()
 	Anchor:Activate()
 	
@@ -1408,7 +1407,7 @@ function Hydraulic( pl, Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, Length1, Length2
 		
 		Constraint:DeleteOnRemove( controller )
 
-		numpad.OnDown( 	 pl, 	key, 	"HydraulicToggle", 	controller )
+		numpad.OnDown( pl, key, "HydraulicToggle", controller )
 
 		return Constraint,rope,controller,slider
 	else
@@ -1445,7 +1444,7 @@ function Muscle( pl, Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, Length1, Length2, w
 	local ctable = 
 	{
 			Type 		= "Muscle",
-			pl		= pl,
+			pl			= pl,
 			Ent1		= Ent1,
 			Ent2		= Ent2,
 			Bone1		= Bone1,
@@ -1465,6 +1464,8 @@ function Muscle( pl, Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, Length1, Length2, w
 	}
 	Constraint:SetTable( ctable )
 	
+	local slider = nil
+
 	if fixed == 1 then  
 		slider = Slider( Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, 0 )
 		slider:SetTable( {} ) -- ??
@@ -1479,7 +1480,7 @@ function Muscle( pl, Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, Length1, Length2, w
 		controller:SetKeyValue("minlength", Length2)
 		controller:SetKeyValue("maxlength", Length1)
 	end
-	controller:SetKeyValue("type", 1)
+	controller:SetKeyValue( "type", 1 )
 	controller:GetTable():SetConstraint( Constraint )
 	controller:Spawn()
 		
@@ -1488,13 +1489,13 @@ function Muscle( pl, Ent1, Ent2, Bone1, Bone2, LPos1, LPos2, Length1, Length2, w
 	
 	Constraint:DeleteOnRemove( controller )
 
-	numpad.OnDown( 	 pl, 	key, 	"MuscleToggle", 	controller )
+	numpad.OnDown( pl, key, "MuscleToggle", controller )
 
 	if ( starton ) then
 		controller:SetDirection( 1 )
 	end
 
-	return Constraint,rope,controller,slider
+	return Constraint, rope, controller, slider
 
 end
 duplicator.RegisterConstraint( "Muscle", Muscle, "pl", "Ent1", "Ent2", "Bone1", "Bone2", "LPos1", "LPos2", "Length1", "Length2", "width", "key", "fixed", "period", "amplitude", "starton", "material" )

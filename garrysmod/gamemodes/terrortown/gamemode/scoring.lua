@@ -5,9 +5,8 @@ local string = string
 local table = table
 local pairs = pairs
 
-SCORE = {}
-SCORE.Events = {}
---SCORE.Scores = {}
+SCORE = SCORE or {}
+SCORE.Events = SCORE.Events or {}
 
 -- One might wonder why all the key names in the event tables are so annoyingly
 -- short. Well, the serialisation module in gmod (glon) does not do any
@@ -245,10 +244,9 @@ function SCORE:StreamToClients()
 
    local parts = #cut
    for k, bit in pairs(cut) do
-      net.Start("report_stream")
+      net.Start("TTT_ReportStream")
       net.WriteBit((k != parts)) -- continuation bit, 1 if there's more coming
       net.WriteString(bit)
       net.Broadcast()
    end
 end
-util.AddNetworkString("report_stream")

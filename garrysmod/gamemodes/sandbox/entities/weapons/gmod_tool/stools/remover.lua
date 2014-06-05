@@ -1,55 +1,43 @@
 
-TOOL.Category		= "Construction"
-TOOL.Name			= "#tool.remover.name"
-TOOL.Command		= nil
-TOOL.ConfigName		= nil
+TOOL.Category = "Construction"
+TOOL.Name = "#tool.remover.name"
 
+local function DoRemoveEntity( ent )
 
-local function RemoveEntity( ent )
-
-	if ( ent:IsValid() ) then
-		ent:Remove()
-	end
-
-end
-
-local function DoRemoveEntity( Entity )
-
-	if ( !IsValid( Entity ) || Entity:IsPlayer() ) then return false end
+	if ( !IsValid( ent ) || ent:IsPlayer() ) then return false end
 
 	-- Nothing for the client to do here
 	if ( CLIENT ) then return true end
 
 	-- Remove all constraints (this stops ropes from hanging around)
-	constraint.RemoveAll( Entity )
+	constraint.RemoveAll( ent )
 	
 	-- Remove it properly in 1 second
-	timer.Simple( 1, function() RemoveEntity( Entity ) end )
+	timer.Simple( 1, function() if ( IsValid( ent ) ) then ent:Remove() end end )
 	
 	-- Make it non solid
-	Entity:SetNotSolid( true )
-	Entity:SetMoveType( MOVETYPE_NONE )
-	Entity:SetNoDraw( true )
+	ent:SetNotSolid( true )
+	ent:SetMoveType( MOVETYPE_NONE )
+	ent:SetNoDraw( true )
 	
 	-- Send Effect
 	local ed = EffectData()
-		ed:SetEntity( Entity )
+	ed:SetEntity( ent )
 	util.Effect( "entity_remove", ed, true, true )
 	
 	return true
 
 end
 
---[[---------------------------------------------------------
-   Name:	LeftClick
-   Desc:	Remove a single entity
------------------------------------------------------------]]  
+--
+-- Remove a single entity
+--
 function TOOL:LeftClick( trace )
 
 	if ( DoRemoveEntity( trace.Entity ) ) then
 	
 		if ( !CLIENT ) then
-			self:GetOwner():SendLua( "achievements.Remover()" );
+			self:GetOwner():SendLua( "achievements.Remover()" )
 		end
 		
 		return true
@@ -57,13 +45,12 @@ function TOOL:LeftClick( trace )
 	end
 	
 	return false
-		
+
 end
 
---[[---------------------------------------------------------
-   Name:	RightClick
-   Desc:	Remove this entity and everything constrained
------------------------------------------------------------]]  
+--
+-- Remove this entity and everything constrained
+--
 function TOOL:RightClick( trace )
 
 	local Entity = trace.Entity
@@ -98,5 +85,11 @@ function TOOL:Reload( trace )
 	if ( CLIENT ) then return true end
 
 	return constraint.RemoveAll( trace.Entity )
+
+end
+
+function TOOL.BuildCPanel( CPanel )
+
+	CPanel:AddControl( "Header", { Description = "#tool.remover.desc" } )
 
 end

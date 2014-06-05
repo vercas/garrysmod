@@ -10,27 +10,24 @@ include( "controls/manifest.lua" )
 
 local PANEL = {}
 
-
 AccessorFunc( PANEL, "m_bInitialized", "Initialized" )
 
 --[[---------------------------------------------------------
-   Name: Paint
+	Name: Paint
 -----------------------------------------------------------]]
 function PANEL:Init()
 	self:SetInitialized( false )
 end
 
-
 --[[---------------------------------------------------------
-   Name: ClearControls
+	Name: ClearControls
 -----------------------------------------------------------]]
 function PANEL:ClearControls()
 	self:Clear()
 end
 
-
 --[[---------------------------------------------------------
-   Name: GetEmbeddedPanel
+	Name: GetEmbeddedPanel
 -----------------------------------------------------------]]
 function PANEL:GetEmbeddedPanel()
 
@@ -39,7 +36,7 @@ function PANEL:GetEmbeddedPanel()
 end
 
 --[[---------------------------------------------------------
-   Name: AddPanel
+	Name: AddPanel
 -----------------------------------------------------------]]
 function PANEL:AddPanel( pnl )
 
@@ -49,7 +46,7 @@ function PANEL:AddPanel( pnl )
 end
 
 --[[---------------------------------------------------------
-   Name: MatSelect   
+	Name: MatSelect
 -----------------------------------------------------------]]
 function PANEL:MatSelect( strConVar, tblOptions, bAutoStretch, iWidth, iHeight )
 
@@ -64,7 +61,9 @@ function PANEL:MatSelect( strConVar, tblOptions, bAutoStretch, iWidth, iHeight )
 		
 		if ( tblOptions != nil ) then
 			for k, v in pairs( tblOptions ) do
-				MatSelect:AddMaterial( v, v )
+				local label = k
+				if ( isnumber( label ) ) then label = v end
+				MatSelect:AddMaterial( label, v )
 			end
 		end
 	
@@ -74,93 +73,48 @@ function PANEL:MatSelect( strConVar, tblOptions, bAutoStretch, iWidth, iHeight )
 end
 
 --[[---------------------------------------------------------
-   Name: FillViaTable
+	Name: FillViaTable
 -----------------------------------------------------------]]
 function PANEL:FillViaTable( Table )
 
 	self:SetInitialized( true )
 	
 	self:SetName( Table.Text )
-	
-	--self:Help( "ControlPanelBuildFunction " .. tostring( Table.ControlPanelBuildFunction ).."\nCommand " .. tostring( Table.Command ).."\nName " .. tostring( Table.Name ).."\nText " .. tostring( Table.Text ) )
-	--self:Help( "Controls ".. Table.Controls )
-	
+
 	--
 	-- If we have a function to create the control panel, use that
 	--
 	if ( Table.ControlPanelBuildFunction ) then
-	
-		self:FillViaFunction( Table.ControlPanelBuildFunction );
-		
-	--
-	-- If not, use the txt file
-	--
-	elseif ( Table.Controls ) then
-	
-		self:LoadControlsFromTextFile( Table.Controls )
-	
-	end
 
-end
+		Table.ControlPanelBuildFunction( self )
 
-function PANEL:FillViaFunction( func )
-
-	func( self )
-
-end
-
---[[---------------------------------------------------------
-   Name: LoadControlsFromTextFile
-   
-	Please don't use this. Ever. 
-	This is just here for backwards compatibility. 
-	Don't rely on it staying around. 
-   
------------------------------------------------------------]]
-function PANEL:LoadControlsFromTextFile( strName )
-
-	local file = file.Read( "settings/controls/"..strName..".txt", true )
-	if (!file) then return end
-
-	local Tab = util.KeyValuesToTablePreserveOrder( file )
-	if (!Tab) then return end
-
-	for k, data in pairs( Tab ) do
-
-		if ( istable( data.Value ) ) then
-			local kv = table.CollapseKeyValue( data.Value )
-			local ctrl = self:AddControl( data.Key, kv )
-			if ( ctrl && kv.description ) then
-				ctrl:SetTooltip( kv.description );
-			end
-		end
-		
 	end
 
 end
 
 --[[---------------------------------------------------------
-   Name: ControlValues
+	Name: ControlValues
 -----------------------------------------------------------]]
 function PANEL:ControlValues( data )
 	if ( data.label) then
-		self:SetLabel( data.label );
+		self:SetLabel( data.label )
 	end
 	if ( data.closed ) then
-		self:SetExpanded( false );
+		self:SetExpanded( false )
 	end
 end
 
 --[[---------------------------------------------------------
-   Name: AddControl
+	Name: AddControl
 -----------------------------------------------------------]]
 function PANEL:AddControl( control, data )
 
 	local data = table.LowerKeyNames( data )
+	local original = control
 	control = string.lower( control )
 
 	-- Retired
-	if ( control == "header" ) then 
+	if ( control == "header" ) then
 	
 		if ( data.description ) then
 			local ctrl = self:Help( data.description )
@@ -289,15 +243,13 @@ function PANEL:AddControl( control, data )
 	
 	if ( control == "combobox" ) then
 		
-		if ( tostring(data.menubutton) == "1" ) then
+		if ( tostring( data.menubutton ) == "1" ) then
 		
 			local ctrl = vgui.Create( "ControlPresets", self )
 			ctrl:SetPreset( data.folder )
 			if ( data.options ) then
 				for k, v in pairs( data.options ) do
-					if ( k != "id" ) then -- Some txt file configs still have an `ID'. But these are redundant now.
-						ctrl:AddOption( k, v )
-					end
+					ctrl:AddOption( k, v )
 				end
 			end
 			
@@ -306,7 +258,7 @@ function PANEL:AddControl( control, data )
 					ctrl:AddConVar( v )
 				end
 			end
-						
+			
 			self:AddPanel( ctrl )
 			return ctrl
 		
@@ -321,15 +273,13 @@ function PANEL:AddControl( control, data )
 		if ( data.height ) then
 
 			local ctrl = vgui.Create( "DListView" )
-			ctrl:SetMultiSelect( false )			
+			ctrl:SetMultiSelect( false )
 			ctrl:AddColumn( data.label or "unknown" )
 			
 			if ( data.options ) then
 			
 				for k, v in pairs( data.options ) do
-				
-					v.id = nil -- Some txt file configs still have an `ID'. But these are redundant now.
-				
+
 					local line = ctrl:AddLine( k )
 					line.data = v
 					
@@ -353,13 +303,10 @@ function PANEL:AddControl( control, data )
 					RunConsoleCommand( k, v )
 				end
 			end
-
-			local left = vgui.Create( "DLabel", self )
-			left:SetText( data.label )
-			left:SetDark( true )
-			ctrl:Dock( TOP )
 	
-			self:AddItem( left, ctrl )
+			self:AddItem( ctrl )
+		
+			return ctrl
 			
 		else
 			
@@ -367,7 +314,6 @@ function PANEL:AddControl( control, data )
 			
 			if ( data.options ) then
 				for k, v in pairs( data.options ) do
-					v.id = nil -- Some txt file configs still have an `ID'. But these are redundant now.
 					ctrl:AddOption( k, v )
 				end
 			end
@@ -380,11 +326,11 @@ function PANEL:AddControl( control, data )
 	
 			self:AddItem( left, ctrl )
 		
-		end
+			return ctrl
 		
-		return ctrl
+		end
 	
-	end 
+	end
 	
 	if ( control == "materialgallery" ) then
 
@@ -415,27 +361,25 @@ function PANEL:AddControl( control, data )
 		
 	end
 	
-	local control = vgui.Create( control, self )
-	if ( control ) then
+	local ctrl = vgui.Create( original, self )
+	-- Fallback for scripts that relied on the old behaviour
+	if ( !ctrl ) then
+		ctrl = vgui.Create( control, self )
+	end
+	if ( ctrl ) then
 		
-		if ( control.ControlValues ) then
-			control:ControlValues( data ) 
+		if ( ctrl.ControlValues ) then
+			ctrl:ControlValues( data )
 		end
 		
-		self:AddPanel( control )
-		return control
+		self:AddPanel( ctrl )
+		return ctrl
 		
 	end
-	
-	
-	
+
 	MsgN( "UNHANDLED CONTROL: ", control )
 	PrintTable( data )
 	MsgN( "\n\n" )
 
 end
-
-
 vgui.Register( "ControlPanel", PANEL, "DForm" )
-
-

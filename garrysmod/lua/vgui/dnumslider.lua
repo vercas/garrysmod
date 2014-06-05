@@ -16,7 +16,7 @@ local PANEL = {}
 -----------------------------------------------------------]]
 function PANEL:Init()
 
-	self.TextArea = self:Add( "DTextEntry" );
+	self.TextArea = self:Add( "DTextEntry" )
 	self.TextArea:Dock( RIGHT )
 	self.TextArea:SetDrawBackground( false )
 	self.TextArea:SetWide( 45 )
@@ -33,7 +33,6 @@ function PANEL:Init()
 	
 	self.Label = vgui.Create ( "DLabel", self )
 		self.Label:Dock( LEFT )
-		self.Label:SetSize( 130 )
 		self.Label:SetMouseInputEnabled( true )
 
 	self.Scratch = self.Label:Add( "DNumberScratch" )
@@ -125,10 +124,6 @@ function PANEL:SetValue( val )
 
 	self.Scratch:SetValue( val )
 
-	if ( self.TextArea != vgui.GetKeyboardFocus() ) then
-		self.TextArea:SetValue( self.Scratch:GetTextValue() )
-	end
-
 	self:ValueChanged( self:GetValue() )
 
 end
@@ -161,6 +156,15 @@ end
 function PANEL:IsEditing()
 
 	return self.Scratch:IsEditing() || self.TextArea:IsEditing() || self.Slider:IsEditing()
+
+end
+
+--[[---------------------------------------------------------
+   Name: PerformLayout
+-----------------------------------------------------------]]
+function PANEL:PerformLayout()
+
+	self.Label:SetWide( self:GetWide() / 2.4 )
 
 end
 
@@ -296,7 +300,7 @@ function PANEL:PerformLayout()
 	self.Scratch:SetVisible( false )
 	self.Label:SetVisible( false )
 	
-	self.Slider:StretchToParent(0,0,0,0)	
+	self.Slider:StretchToParent(0,0,0,0)
 	self.Slider:SetSlideX( self.Scratch:GetFraction() )
 
 end

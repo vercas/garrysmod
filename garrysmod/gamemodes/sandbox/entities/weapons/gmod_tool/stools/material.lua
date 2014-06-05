@@ -1,8 +1,6 @@
-TOOL.Category		= "Render"
-TOOL.Name			= "#tool.material.name"
-TOOL.Command		= nil
-TOOL.ConfigName		= ""
 
+TOOL.Category = "Render"
+TOOL.Name = "#tool.material.name"
 
 TOOL.ClientConVar[ "override" ] = "debug/env_cubemap_model"
 
@@ -16,9 +14,7 @@ local function SetMaterial( Player, Entity, Data )
 		--
 		-- Make sure this is in the 'allowed' list in multiplayer - to stop people using exploits
 		--
-		if ( !game.SinglePlayer() && !list.Contains( "OverrideMaterials", Data.MaterialOverride ) && Data.MaterialOverride != "" ) then
-			return 
-		end
+		if ( !game.SinglePlayer() && !list.Contains( "OverrideMaterials", Data.MaterialOverride ) && Data.MaterialOverride != "" ) then return end
 
 		Entity:SetMaterial( Data.MaterialOverride )
 		duplicator.StoreEntityModifier( Entity, "material", Data )
@@ -36,8 +32,13 @@ function TOOL:LeftClick( trace )
 
 	if ( !IsValid( trace.Entity ) ) then return end
 
+	if ( CLIENT ) then return true end
+	
+	local ent = trace.Entity
+	if ( IsValid( ent.AttachedEntity ) ) then ent = ent.AttachedEntity end
+
 	local mat = self:GetClientInfo( "override" )
-	SetMaterial( self:GetOwner(), trace.Entity, { MaterialOverride = mat } )
+	SetMaterial( self:GetOwner(), ent, { MaterialOverride = mat } )
 	return true
 
 end
@@ -49,9 +50,19 @@ function TOOL:RightClick( trace )
 
 	if ( !IsValid( trace.Entity ) ) then return end
 
-	SetMaterial( self:GetOwner(), trace.Entity, { MaterialOverride = "" } )
+	if ( CLIENT ) then return true end
+	
+	local ent = trace.Entity
+	if ( IsValid( ent.AttachedEntity ) ) then ent = ent.AttachedEntity end
+
+	SetMaterial( self:GetOwner(), ent, { MaterialOverride = "" } )
 	return true
 
+end
+
+if ( IsMounted( "tf" ) ) then
+	list.Add( "OverrideMaterials", "models/player/shared/gold_player" )
+	list.Add( "OverrideMaterials", "models/player/shared/ice_player" )
 end
 
 list.Add( "OverrideMaterials", "models/wireframe" )
@@ -100,14 +111,10 @@ list.Add( "OverrideMaterials", "phoenix_storms/wire/pcb_blue" )
 list.Add( "OverrideMaterials", "hunter/myplastic" )
 list.Add( "OverrideMaterials", "models/XQM/LightLinesRed_tool" )
 
-
 function TOOL.BuildCPanel( CPanel )
 
-	-- HEADER
-	CPanel:SetTooltip( "#tool.material.desc" )
-	
-	CPanel:MatSelect( "material_override", list.Get( "OverrideMaterials" ), true, 0.33, 0.33 )
-									
+	CPanel:AddControl( "Header", { Description = "#tool.material.help" } )
+
+	CPanel:MatSelect( "material_override", list.Get( "OverrideMaterials" ), true, 64, 64 )
+
 end
-
-

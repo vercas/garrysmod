@@ -25,7 +25,7 @@ function table.Copy(t, lookup_table)
 	if (t == nil) then return nil end
 	
 	local copy = {}
-	setmetatable(copy, getmetatable(t))
+	setmetatable(copy, debug.getmetatable(t))
 	for i,v in pairs(t) do
 		if ( !istable(v) ) then
 			copy[i] = v
@@ -734,5 +734,19 @@ function table.ForEach( tab, funcname )
 	for k, v in pairs( tab ) do
 		funcname( k, v )
 	end
+
+end
+
+function table.GetKeys( tab )
+	
+	local keys = {}
+	local id = 1
+
+	for k, v in pairs( tab ) do
+		keys[ id ] = k
+		id = id + 1
+	end
+	
+	return keys
 
 end

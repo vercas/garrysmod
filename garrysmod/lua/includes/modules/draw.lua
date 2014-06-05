@@ -11,6 +11,7 @@ local setmetatable = setmetatable
 local ScrW = ScrW
 local ScrH = ScrH
 local Color = Color
+local tostring = tostring
 local color_white = color_white
 
 module( "draw" )
@@ -61,31 +62,26 @@ end
 -----------------------------------------------------------]]
 function SimpleText(text, font, x, y, colour, xalign, yalign)
 
+	text 	= tostring( text )
 	font 	= font 		or "DermaDefault"
 	x 		= x 		or 0
 	y 		= y 		or 0
 	xalign 	= xalign 	or TEXT_ALIGN_LEFT
 	yalign 	= yalign 	or TEXT_ALIGN_TOP
-	local w, h = 0, 0
-	surface.SetFont(font)
 	
+	surface.SetFont(font)
+	local w, h = surface.GetTextSize( text )
+
 	if (xalign == TEXT_ALIGN_CENTER) then
-		w, h = surface.GetTextSize( text )
 		x = x - w/2
 	elseif (xalign == TEXT_ALIGN_RIGHT) then
-		w, h = surface.GetTextSize( text )
 		x = x - w
 	end
 	
 	if (yalign == TEXT_ALIGN_CENTER) then
-		w, h = surface.GetTextSize( text )
 		y = y - h/2
-		
 	elseif ( yalign == TEXT_ALIGN_BOTTOM ) then
-	
-		w, h = surface.GetTextSize( text );
-		y = y - h;
-	
+		y = y - h
 	end
 	
 	surface.SetTextPos( math.ceil( x ), math.ceil( y ) );
@@ -121,7 +117,7 @@ function SimpleTextOutlined(text, font, x, y, colour, xalign, yalign, outlinewid
 		end
 	end
 	
-	SimpleText(text, font, x, y, colour, xalign, yalign)
+	return SimpleText(text, font, x, y, colour, xalign, yalign)
 	
 end
 
@@ -134,9 +130,10 @@ end
 function DrawText(text, font, x, y, colour, xalign )
 
 	if (font == nil) then font = "DermaDefault" end
+	if (text != nil) then text = tostring( text ) end
 	if (x == nil) then x = 0 end
 	if (y == nil) then y = 0 end
-	
+
 	local curX = x
 	local curY = y
 	local curString = ""
@@ -259,11 +256,11 @@ end
 -----------------------------------------------------------]]
 function Text( tab )
 
-	font 	= tab.font 		or "DermaDefault"
-	x 		= tab.pos[1]	or 0
-	y 		= tab.pos[2]	or 0
-	xalign 	= tab.xalign 	or TEXT_ALIGN_LEFT
-	yalign 	= tab.yalign 	or TEXT_ALIGN_TOP
+	local font 		= tab.font 		or "DermaDefault"
+	local x 		= tab.pos[1]	or 0
+	local y 		= tab.pos[2]	or 0
+	local xalign 	= tab.xalign 	or TEXT_ALIGN_LEFT
+	local yalign 	= tab.yalign 	or TEXT_ALIGN_TOP
 	
 	surface.SetFont(font)
 	

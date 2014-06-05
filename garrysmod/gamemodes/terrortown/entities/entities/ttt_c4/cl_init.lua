@@ -156,10 +156,10 @@ end
 local disarm_beep    = Sound("buttons/blip2.wav")
 local wire_cut       = Sound("ttt/wirecut.mp3")
 
-local c4_bomb_mat    = Material("VGUI/ttt/c4_bomb")
-local c4_cut_mat     = Material("VGUI/ttt/c4_cut")
-local c4_wire_mat    = Material("VGUI/ttt/c4_wire")
-local c4_wirecut_mat = Material("VGUI/ttt/c4_wire_cut")
+local c4_bomb_mat    = Material("vgui/ttt/c4_bomb")
+local c4_cut_mat     = Material("vgui/ttt/c4_cut")
+local c4_wire_mat    = Material("vgui/ttt/c4_wire")
+local c4_wirecut_mat = Material("vgui/ttt/c4_wire_cut")
 
 --- Disarm panels
 local on_wire_cut = nil
@@ -456,8 +456,8 @@ end
 
 ---- Communication
 
-local function C4ConfigHook(um)
-   local idx = um:ReadShort()
+local function C4ConfigHook()
+   local idx = net.ReadUInt(16)
 
    local bomb = ents.GetByIndex(idx)
    if IsValid(bomb) then
@@ -468,13 +468,13 @@ local function C4ConfigHook(um)
       end
    end
 end
-usermessage.Hook("c4_config", C4ConfigHook)
+net.Receive("TTT_C4Config", C4ConfigHook)
 
-local function C4DisarmResultHook(um)
-   local idx = um:ReadShort()
+local function C4DisarmResultHook()
+   local idx = net.ReadUInt(16)
    local result = {}
 
-   local correct = um:ReadBool()
+   local correct = net.ReadBit() == 1
 
    local bomb = ents.GetByIndex(idx)
    if IsValid(bomb) then
@@ -485,4 +485,4 @@ local function C4DisarmResultHook(um)
       end
    end
 end
-usermessage.Hook("c4_disarm_result", C4DisarmResultHook)
+net.Receive("TTT_C4DisarmResult", C4DisarmResultHook)

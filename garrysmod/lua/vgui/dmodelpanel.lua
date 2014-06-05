@@ -27,6 +27,7 @@ function PANEL:Init()
 	self.Entity = nil
 	self.LastPaint = 0
 	self.DirectionalLight = {}
+	self.FarZ = 4096
 	
 	self:SetCamPos( Vector( 50, 50, 50 ) )
 	self:SetLookAt( Vector( 0, 0, 40 ) )
@@ -69,17 +70,41 @@ function PANEL:SetModel( strModelName )
 	
 	self.Entity = ClientsideModel( strModelName, RENDER_GROUP_OPAQUE_ENTITY )
 	if ( !IsValid(self.Entity) ) then return end
-	
+
 	self.Entity:SetNoDraw( true )
 	
 	-- Try to find a nice sequence to play
-	local iSeq = self.Entity:LookupSequence( "walk_all" );
-	if (iSeq <= 0) then iSeq = self.Entity:LookupSequence( "WalkUnarmed_all" ) end
-	if (iSeq <= 0) then iSeq = self.Entity:LookupSequence( "walk_all_moderate" ) end
+	local iSeq = self.Entity:LookupSequence( "walk_all" )
+	if ( iSeq <= 0 ) then iSeq = self.Entity:LookupSequence( "WalkUnarmed_all" ) end
+	if ( iSeq <= 0 ) then iSeq = self.Entity:LookupSequence( "walk_all_moderate" ) end
 	
-	if (iSeq > 0) then self.Entity:ResetSequence( iSeq ) end
+	if ( iSeq > 0 ) then self.Entity:ResetSequence( iSeq ) end
 	
 	
+end
+
+--[[---------------------------------------------------------
+   Name: DrawModel
+-----------------------------------------------------------]]
+function PANEL:DrawModel()
+	local curparent = self
+	local rightx = self:GetWide()
+	local leftx = 0
+	local topy = 0
+	local bottomy = self:GetTall()
+	local previous = curparent
+	while(curparent:GetParent() != nil) do
+		curparent = curparent:GetParent()
+		local x,y = previous:GetPos()
+		topy = math.Max(y, topy+y)
+		leftx = math.Max(x, leftx+x)
+		bottomy = math.Min(y+previous:GetTall(), bottomy + y)
+		rightx = math.Min(x+previous:GetWide(), rightx + x)
+		previous = curparent
+	end
+	render.SetScissorRect(leftx,topy,rightx, bottomy, true)
+	self.Entity:DrawModel()
+	render.SetScissorRect(0,0,0,0, false)
 end
 
 --[[---------------------------------------------------------
@@ -99,7 +124,7 @@ function PANEL:Paint()
 	end
 	
 	local w, h = self:GetSize()
-	cam.Start3D( self.vCamPos, ang, self.fFOV, x, y, w, h, 5, 4096 )
+	cam.Start3D( self.vCamPos, ang, self.fFOV, x, y, w, h, 5, self.FarZ )
 	cam.IgnoreZ( true )
 	
 	render.SuppressEngineLighting( true )
@@ -114,8 +139,7 @@ function PANEL:Paint()
 			render.SetModelLighting( i, col.r/255, col.g/255, col.b/255 )
 		end
 	end
-		
-	self.Entity:DrawModel()
+	self:DrawModel()
 	
 	render.SuppressEngineLighting( false )
 	cam.IgnoreZ( false )
@@ -162,6 +186,12 @@ function PANEL:LayoutEntity( Entity )
 	
 	Entity:SetAngles( Angle( 0, RealTime()*10,  0) )
 
+end
+
+function PANEL:OnRemove()
+	if ( IsValid( self.Entity ) ) then
+		self.Entity:Remove()
+	end
 end
 
 --[[---------------------------------------------------------

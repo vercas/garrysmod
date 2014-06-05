@@ -96,6 +96,8 @@ if ( SERVER ) then
 
 
 	function CC_Cleanup( pl, command, args )
+
+		if ( !IsValid( pl ) ) then return end
 	
 		local id = pl:UniqueID()
 		
@@ -168,7 +170,7 @@ if ( SERVER ) then
 			game.CleanUpMap()
 			
 			-- Send tooltip command to client
-			pl:SendLua( "GAMEMODE:OnCleanup( 'all' )" )
+			if ( IsValid( pl ) ) then pl:SendLua( "GAMEMODE:OnCleanup( 'all' )" ) end
 			
 			return
 			
@@ -193,7 +195,7 @@ if ( SERVER ) then
 		end
 		
 		-- Send tooltip command to client
-		pl:SendLua( "GAMEMODE:OnCleanup( '"..args[1].."' )" )
+		if ( IsValid( pl ) ) then pl:SendLua( "GAMEMODE:OnCleanup( '"..args[1].."' )" ) end
 		
 	end
 	
@@ -208,8 +210,7 @@ else
 		if (!Panel) then return end
 		
 		Panel:ClearControls()
-		Panel:AddControl( "Header", { Text = "#CleanUp" }  )
-		
+		Panel:AddControl( "Header", { Description = "#spawnmenu.utilities.cleanup.help" } )
 		Panel:Button( "#CleanupAll", "gmod_cleanup" )
 
 		table.sort( cleanup_types )
@@ -224,7 +225,7 @@ else
 		if (!Panel) then return end
 		
 		Panel:ClearControls()
-		Panel:AddControl( "Header", { Text = "#CleanUp" }  )
+		Panel:AddControl( "Header", { Description = "#spawnmenu.utilities.cleanup.help" } )
 		Panel:Button( "#CleanupAll", "gmod_admin_cleanup" )
 		
 		table.sort( cleanup_types )

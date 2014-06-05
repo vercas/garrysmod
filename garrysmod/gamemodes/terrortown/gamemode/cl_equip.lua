@@ -23,7 +23,7 @@ function GetEquipmentForRole(role)
                limited  = v.LimitedStock,
                kind     = v.Kind or WEAPON_NONE,
                slot     = (v.Slot or 0) + 1,
-               material = v.Icon or "VGUI/ttt/icon_id",
+               material = v.Icon or "vgui/ttt/icon_id",
                -- the below should be specified in EquipMenuData, in which case
                -- these values are overwritten
                type     = "Type not specified",
@@ -228,7 +228,7 @@ local function TraitorMenuPopup()
             ic = vgui.Create("LayeredIcon", dlist)
 
             local marker = vgui.Create("DImage")
-            marker:SetImage("VGUI/ttt/custom_marker")
+            marker:SetImage("vgui/ttt/custom_marker")
             marker.PerformLayout = function(s)
                                       s:AlignBottom(2)
                                       s:AlignRight(2)
@@ -248,7 +248,7 @@ local function TraitorMenuPopup()
          -- Slot marker icon
          if ItemIsWeapon(item) then
             local slot = vgui.Create("SimpleIconLabelled")
-            slot:SetIcon("VGUI/ttt/slotcap")
+            slot:SetIcon("vgui/ttt/slotcap")
             slot:SetIconColor(color_slot[ply:GetRole()] or COLOR_GREY)
             slot:SetIconSize(16)
 
@@ -444,31 +444,31 @@ function GM:OnContextMenuOpen()
    RunConsoleCommand("ttt_cl_traitorpopup")
 end
 
-local function ReceiveEquipment(um)
+local function ReceiveEquipment()
    local ply = LocalPlayer()
    if not IsValid(ply) then return end
 
-   ply.equipment_items = um:ReadShort()
+   ply.equipment_items = net.ReadUInt(16)
 end
-usermessage.Hook("equipment", ReceiveEquipment)
+net.Receive("TTT_Equipment", ReceiveEquipment)
 
-local function ReceiveCredits(um)
+local function ReceiveCredits()
    local ply = LocalPlayer()
    if not IsValid(ply) then return end
 
-   ply.equipment_credits = um:ReadChar()
+   ply.equipment_credits = net.ReadUInt(8)
 end
-usermessage.Hook("credits", ReceiveCredits)
+net.Receive("TTT_Credits", ReceiveCredits)
 
 local r = 0
-local function ReceiveBought(um)
+local function ReceiveBought()
    local ply = LocalPlayer()
    if not IsValid(ply) then return end
 
    ply.bought = {}
-   local num = um:ReadShort()
+   local num = net.ReadUInt(8)
    for i=1,num do
-      local s = um:ReadString()
+      local s = net.ReadString()
       if s != "" then
          table.insert(ply.bought, s)
       end
@@ -484,14 +484,14 @@ local function ReceiveBought(um)
       r = 0
    end
 end
-usermessage.Hook("bought", ReceiveBought)
+net.Receive("TTT_Bought", ReceiveBought)
 
 -- Player received the item he has just bought, so run clientside init
-local function ReceiveBoughtItem(um)
-   local is_item = um:ReadBool()
-   local id = is_item and um:ReadShort() or um:ReadString()
+local function ReceiveBoughtItem()
+   local is_item = net.ReadBit() == 1
+   local id = is_item and net.ReadUInt(16) or net.ReadString()
 
    -- I can imagine custom equipment wanting this, so making a hook
    hook.Run("TTTBoughtItem", is_item, id)
 end
-usermessage.Hook("bought_item", ReceiveBoughtItem)
+net.Receive("TTT_BoughtItem", ReceiveBoughtItem)

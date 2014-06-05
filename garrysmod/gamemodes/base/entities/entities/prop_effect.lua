@@ -1,6 +1,10 @@
 
 AddCSLuaFile()
 
+if ( CLIENT ) then
+	CreateConVar( "cl_draweffectrings", "1", 0, "Should the effect green rings be visible?" )
+end
+
 ENT.Type = "anim"
 
 ENT.PrintName			= ""
@@ -70,14 +74,15 @@ end
    Name: Draw
 -----------------------------------------------------------]]
 function ENT:Draw()
+
+	if ( GetConVarNumber( "cl_draweffectrings" ) == 0 ) then return end
 	
 	-- Don't draw the grip if there's no chance of us picking it up
 	local ply = LocalPlayer()
 	local wep = ply:GetActiveWeapon()
-	if ( !wep:IsValid() ) then return end
+	if ( !IsValid( wep ) ) then return end
 	
 	local weapon_name = wep:GetClass()
-	local tool_mode = gmod_toolmode:GetString()
 	
 	if ( weapon_name != "weapon_physgun" 
 		&& weapon_name != "weapon_physcannon" 

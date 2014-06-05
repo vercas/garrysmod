@@ -1,4 +1,3 @@
-
 if SERVER then return end
 
 --[[
@@ -37,12 +36,6 @@ function dragndrop.HandleDroppedInGame()
 	local panel = vgui.GetHoveredPanel()
 	if ( !IsValid( panel ) ) then return end
 	if ( panel:GetClassName() != "CGModBase" ) then return end
-	
-	local tr = util.TraceLine( util.GetPlayerTrace( LocalPlayer() ) )
-	
-	MsgN( "DROPPED ON ", panel )
-	MsgN( "Create spawn at " ) 
-	PrintTable( tr )
 	
 end
 
@@ -264,7 +257,7 @@ hook.Add( "DrawOverlay", "DragNDropPaint", function()
 				dist = dist / 512
 				surface.SetAlphaMultiplier( Alpha * dist );
 				
-				v:PaintAt( ox + v.x, oy + v.y );
+				v:PaintAt( ox + v.x - v:GetWide() / 2, oy + v.y - v:GetTall() / 2 ); // fill the gap between the top left corner and the mouse position
 			
 			end
 			

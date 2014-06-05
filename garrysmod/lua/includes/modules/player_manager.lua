@@ -13,6 +13,7 @@ module( "player_manager" )
 
 -- Stores a table of valid player models
 local ModelList = {}
+local ModelListRev = {}
 local HandNames = {}
 
 --[[---------------------------------------------------------
@@ -21,6 +22,7 @@ local HandNames = {}
 function AddValidModel( name, model )
 
 	ModelList[ name ] = model
+	ModelListRev[ model ] = name
 
 end
 
@@ -52,6 +54,16 @@ function TranslatePlayerModel( name )
 	end
 	
 	return "models/player/kleiner.mdl"
+end
+
+-- Translate from the full model name to simple model name
+function TranslateToPlayerModelName( model )
+
+	if ( ModelListRev[ model ] != nil ) then
+		return ModelListRev[ model ]
+	end
+	
+	return "kleiner"
 end
 
 --
@@ -296,7 +308,7 @@ function RegisterClass( name, table, base )
 	--
 	if ( base ) then
 
-		if ( !Type[ name ] ) then ErrorNoHalt( "RegisterClass - deriving "..name.." from unknown class "..base.."!" ) end
+		if ( !Type[ name ] ) then ErrorNoHalt( "RegisterClass - deriving "..name.." from unknown class "..base.."!\n" ) end
 		setmetatable( Type[ name ], { __index = Type[ base ] } )
 
 	end
@@ -316,10 +328,19 @@ end
 function SetPlayerClass( ply, classname )
 
 	local t = Type[ classname ]
-	if ( !Type[ classname ] ) then ErrorNoHalt( "SetPlayerClass - attempt to use unknown player class "..classname ) end
+	if ( !Type[ classname ] ) then ErrorNoHalt( "SetPlayerClass - attempt to use unknown player class "..classname .. "!\n" ) end
 
 	local id = util.NetworkStringToID( classname )
 	ply:SetClassID( id )
+
+end
+
+function GetPlayerClass( ply )
+
+	local id = ply:GetClassID()
+	if ( id == 0 ) then return end
+
+	return util.NetworkIDToString( id )
 
 end
 

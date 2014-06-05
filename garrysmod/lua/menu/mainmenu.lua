@@ -28,6 +28,7 @@ function PANEL:Init()
 	self.HTML:SetKeyboardInputEnabled( true )
 	self.HTML:SetMouseInputEnabled( true );
 	self.HTML:SetAllowLua( true )
+	self.HTML:RequestFocus()
 
 
 	ws_save.HTML	= self.HTML
@@ -268,7 +269,7 @@ function LanguageChanged( lang )
 	if ( !IsValid( pnlMainMenu ) ) then return end
 
 	UpdateLanguages();
-	pnlMainMenu:Call( "UpdateLanguage( '"..lang.."' )" );
+	pnlMainMenu:Call( "UpdateLanguage( \""..lang:JavascriptSafe().."\" )" );
 
 end
 

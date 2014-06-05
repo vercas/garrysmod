@@ -30,8 +30,7 @@ SWEP.Slot				= 5
 SWEP.SlotPos			= 1
 SWEP.DrawAmmo			= false
 SWEP.DrawCrosshair		= false
-SWEP.Spawnable			= false
-SWEP.AdminSpawnable		= false
+SWEP.Spawnable			= true
 
 if ( SERVER ) then
 
@@ -78,7 +77,7 @@ end
 -----------------------------------------------------------]]
 function SWEP:Initialize()
 
-	self:SetWeaponHoldType( "camera" )
+	self:SetHoldType( "camera" )
 
 end
 
@@ -122,14 +121,14 @@ function SWEP:DoShootEffect()
 		local vForward = self.Owner:GetAimVector()
 
 		local trace = {}
-			trace.start = vPos
-			trace.endpos = vPos + vForward * 256
-			trace.filter = self.Owner
+		trace.start = vPos
+		trace.endpos = vPos + vForward * 256
+		trace.filter = self.Owner
 
-		tr = util.TraceLine( trace )
+		local tr = util.TraceLine( trace )
 
 		local effectdata = EffectData()
-			effectdata:SetOrigin( tr.HitPos )
+		effectdata:SetOrigin( tr.HitPos )
 		util.Effect( "camera_flash", effectdata, true )
 
 	end
@@ -272,7 +271,7 @@ end
 --
 function SWEP:Equip()
 
-	if ( self:GetZoom() == 70 ) then
+	if ( self:GetZoom() == 70 && self.Owner:IsPlayer() ) then
 		self:SetZoom( self.Owner:GetInfoNum( "fov_desired", 75 ) )
 	end
 

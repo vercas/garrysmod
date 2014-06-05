@@ -1,6 +1,6 @@
 
 local gmod_drawhelp = CreateClientConVar( "gmod_drawhelp", "1", true, false )
-gmod_toolmode = CreateClientConVar( "gmod_toolmode", "rope", true, true )
+local gmod_toolmode = CreateClientConVar( "gmod_toolmode", "rope", true, true )
 
 include('shared.lua')
 include('cl_viewscreen.lua')
@@ -10,9 +10,6 @@ SWEP.Slot				= 5
 SWEP.SlotPos			= 6	
 SWEP.DrawAmmo			= false
 SWEP.DrawCrosshair		= true
-
-SWEP.Spawnable			= false
-SWEP.AdminSpawnable		= false
 
 SWEP.WepSelectIcon		= surface.GetTextureID( "vgui/gmod_tool" )
 SWEP.Gradient			= surface.GetTextureID( "gui/gradient" )

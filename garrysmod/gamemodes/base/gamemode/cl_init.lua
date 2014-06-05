@@ -33,15 +33,6 @@ function GM:Think( )
 end
 
 --[[---------------------------------------------------------
-   Name: gamemode:PlayerDeath( )
-   Desc: Called when a player dies. If the attacker was
-		  a player then attacker will become a Player instead
-		  of an Entity. 		 
------------------------------------------------------------]]
-function GM:PlayerDeath( ply, attacker )
-end
-
---[[---------------------------------------------------------
    Name: gamemode:PlayerBindPress( )
    Desc: A player pressed a bound key - return true to override action		 
 -----------------------------------------------------------]]
@@ -143,6 +134,45 @@ function GM:GetTeamNumColor( num )
 end
 
 --[[---------------------------------------------------------
+   Name: gamemode:OnPlayerChat()
+		Process the player's chat.. return true for no default
+-----------------------------------------------------------]]
+function GM:OnPlayerChat( player, strText, bTeamOnly, bPlayerIsDead )
+	
+	--
+	-- I've made this all look more complicated than it is. Here's the easy version
+	--
+	-- chat.AddText( player, Color( 255, 255, 255 ), ": ", strText )
+	--
+	
+	local tab = {}
+	
+	if ( bPlayerIsDead ) then
+		table.insert( tab, Color( 255, 30, 40 ) )
+		table.insert( tab, "*DEAD* " )
+	end
+	
+	if ( bTeamOnly ) then
+		table.insert( tab, Color( 30, 160, 40 ) )
+		table.insert( tab, "(TEAM) " )
+	end
+	
+	if ( IsValid( player ) ) then
+		table.insert( tab, player )
+	else
+		table.insert( tab, "Console" )
+	end
+	
+	table.insert( tab, Color( 255, 255, 255 ) )
+	table.insert( tab, ": "..strText )
+	
+	chat.AddText( unpack(tab) )
+
+	return true
+	
+end
+
+--[[---------------------------------------------------------
    Name: gamemode:OnChatTab( str )
    Desc: Tab is pressed when typing (Auto-complete names, IRC style)
 -----------------------------------------------------------]]
@@ -154,10 +184,8 @@ function GM:OnChatTab( str )
 	end
 	
 	if (LastWord == nil) then return str end
-	
-	playerlist = player.GetAll()
-	
-	for k, v in pairs( playerlist ) do
+
+	for k, v in pairs( player.GetAll() ) do
 		
 		local nickname = v:Nick()
 		
@@ -244,7 +272,7 @@ end
 		 Return true to NOT render this frame for some reason (danger!)
 -----------------------------------------------------------]]
 function GM:PreRender()
-	return false;
+	return false
 end
 
 --[[---------------------------------------------------------
@@ -253,16 +281,6 @@ end
 -----------------------------------------------------------]]
 function GM:PostRender()
 
-end
-
---[[---------------------------------------------------------
-   Name: gamemode:GetVehicles( )
-   Desc: Gets the vehicles table..
------------------------------------------------------------]]
-function GM:GetVehicles()
-
-	return list.Get( "Vehicles" )
-	
 end
 
 --[[---------------------------------------------------------
@@ -277,7 +295,7 @@ end
 -----------------------------------------------------------]]
 function GM:CalcVehicleView( Vehicle, ply, view )
 
-	if ( Vehicle.GetThirdPersonMode == nil ) then
+	if ( Vehicle.GetThirdPersonMode == nil || ply:GetViewEntity() != ply ) then
 		-- This hsouldn't ever happen.
 		return
 	end
@@ -298,14 +316,15 @@ function GM:CalcVehicleView( Vehicle, ply, view )
 	local TargetOrigin = view.origin + ( view.angles:Forward() * -radius )
 	local WallOffset = 4;
 		  
-	local tr = util.TraceHull( 
-	{
+	local tr = util.TraceHull( {
 		start	= view.origin,
 		endpos	= TargetOrigin,
-		filter	= Vehicle,
+		filter	= function()
+			return false
+		end,
 		mins	= Vector( -WallOffset, -WallOffset, -WallOffset ),
 		maxs	= Vector( WallOffset, WallOffset, WallOffset ),
-	}) 
+	} ) 
 	
 	view.origin			= tr.HitPos
 	view.drawviewer		= true
@@ -357,11 +376,6 @@ function GM:CalcView( ply, origin, angles, fov, znear, zfar )
 	
 	if ( IsValid( Weapon ) ) then
 	
-		local func = Weapon.GetViewModelPosition
-		if ( func ) then
-			view.vm_origin,  view.vm_angles = func( Weapon, origin*1, angles*1 ) -- Note: *1 to copy the object so the child function can't edit it.
-		end
-		
 		local func = Weapon.CalcView
 		if ( func ) then
 			view.origin, view.angles, view.fov = func( Weapon, ply, origin*1, angles*1, fov ) -- Note: *1 to copy the object so the child function can't edit it.
@@ -539,13 +553,27 @@ end
 -----------------------------------------------------------]]
 function GM:CalcViewModelView( Weapon, ViewModel, OldEyePos, OldEyeAng, EyePos, EyeAng )
 		
-	--OldEyePos = OldEyePos + VectorRand() * 2
-	--ViewModel:SetPos( OldEyePos, OldEyeAng )
-		
 	if ( !IsValid( Weapon ) ) then return end
-	if ( Weapon.CalcViewModelView == nil ) then return end
-		
-	Weapon:CalcViewModelView( ViewModel, OldEyePos, OldEyeAng, EyePos, EyeAng )
+	
+	local vm_origin, vm_angles = EyePos, EyeAng
+	
+	-- Controls the position of all viewmodels
+	local func = Weapon.GetViewModelPosition
+	if ( func ) then
+		local pos, ang = func( Weapon, EyePos*1, EyeAng*1 )
+		vm_origin = pos or vm_origin
+		vm_angles = ang or vm_angles
+	end
+	
+	-- Controls the position of individual viewmodels
+	func = Weapon.CalcViewModelView
+	if ( func ) then
+		local pos, ang = func( Weapon, ViewModel, OldEyePos*1, OldEyeAng*1, EyePos*1, EyeAng*1 )
+		vm_origin = pos or vm_origin
+		vm_angles = ang or vm_angles
+	end
+	
+	return vm_origin, vm_angles
 	
 end
 
@@ -571,6 +599,15 @@ end
 function GM:PostDrawViewModel( ViewModel, Player, Weapon )
 
 	if ( !IsValid( Weapon ) ) then return false end
+	
+	if ( Weapon.UseHands || !Weapon:IsScripted() ) then
+
+		local hands = Player:GetHands()
+		if ( IsValid( hands ) ) then
+			hands:DrawModel()
+		end
+
+	end
 
 	player_manager.RunClass( Player, "PostDrawViewModel", ViewModel, Weapon )
 
